@@ -5,6 +5,8 @@ import numpy as np
 # other .py files
 import dashcam as dc
 
+# NOTES: need to fine tune dist?
+
 # input/output paths need to be implemented locally since /data is not pushed
 # TODO: Make input/output dynamic (terminal interface?)
 INPUT_PATH = '../data/raw/Video Apr 14 2026, 12 05 06 PM.mp4'
@@ -34,7 +36,7 @@ while capture.isOpened():
     results   = model.track(frame, persist=True, conf=CONF, classes=CLASSES,
                              tracker="bytetrack.yaml", verbose=False)
     # TODO: Modify yolo label
-    annotated = results[0].plot()
+    annotated = results[0].plot(labels=False, conf=False) # turn off yolo id and precision labels
 
     if results[0].boxes is not None:
         for box in results[0].boxes:
@@ -45,8 +47,7 @@ while capture.isOpened():
                 continue
             cv2.putText(annotated, f"ID{track_id}: {dist}m",
                         (int(x1), int(y1) - 10),
-                        # TODO: Change label, can barely see it
-                        cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 3) # label
+                        cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2) # label
     
     output.write(annotated)
 
