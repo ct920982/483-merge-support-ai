@@ -65,7 +65,7 @@ def run_model(input_path, output_path):
                 if dist is None:
                     continue
 
-                class_id = int(box.class_id[0])
+                class_id = int(box.cls[0])
                 label = f"ID{track_id}: {dist}m"
 
                 if class_id == 9:  # traffic light
@@ -78,6 +78,8 @@ def run_model(input_path, output_path):
 
                 cv2.putText(annotated, label, (int(x1), int(y1) - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 2, color, 2)
+                
+                #TODO: Every frame we need to write features into a csv file
         
         output.write(annotated)
 

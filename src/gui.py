@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog
+from pathlib import Path
 
 import model
 
@@ -23,6 +24,7 @@ selected_input = select_file()
 
 if selected_input:
     print(f"File selected: {selected_input}")
-    model.run_model(selected_input, "../data/processed/gui_out.mp4")
+    file_name_extension = Path(selected_input).name
+    model.run_model(selected_input, f"../data/processed/{file_name_extension}")
 else:
     print("User cancelled the selection.")
