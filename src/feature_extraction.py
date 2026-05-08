@@ -7,7 +7,7 @@ from ultralytics import YOLO
 import dashcam as dc
 
 # model configurations
-MODEL = "yolo26x.pt" # https://docs.ultralytics.com/models/yolo26/#key-features
+MODEL = "../models/yolo26x.pt" # https://docs.ultralytics.com/models/yolo26/#key-features
 CONF = 0.4
 CLASSES = [0, 1, 2, 3, 5, 7, 9] # https://docs.ultralytics.com/datasets/detect/coco8/#introduction
 
@@ -18,10 +18,9 @@ class UnprotectedLeftTurnFeatureExtraction:
         self.prev_dists = {}
         self.log_file = log_file
 
-        # TODO: add is_safe
         self.csv_file = open(log_file, "w", newline="")
         self.writer = csv.writer(self.csv_file)
-        self.writer.writerow(["frame", "track_id", "class", "dist", "delta_dist", "light_state"])
+        self.writer.writerow(["frame", "track_id", "class", "dist", "delta_dist", "light_state", "is_safe"])
 
     def get_traffic_light_state(self, frame, x1, y1, x2, y2):
         crop = frame[int(y1):int(y2), int(x1):int(x2)]
@@ -105,7 +104,8 @@ class UnprotectedLeftTurnFeatureExtraction:
                     cv2.putText(annotated, label, (int(x1), int(y1) - 10),
                                 cv2.FONT_HERSHEY_SIMPLEX, 2, text_color, 2)
                     
-                    self.writer.writerow([frame_count, track_id, class_id, dist, delta_dist, state])
+                    # we will manually need to write 1 for safe in csv files
+                    self.writer.writerow([frame_count, track_id, class_id, dist, delta_dist, state, 0])
             
             output.write(annotated)
             frame_count += 1

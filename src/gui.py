@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import filedialog
 from pathlib import Path
 
-from model import UnprotectedLeftTurnFeatureExtraction # import class then initialize here
+from feature_extraction import UnprotectedLeftTurnFeatureExtraction # import class then initialize here
 
 # for now just have user select input file, makes things faster
 def select_file():
