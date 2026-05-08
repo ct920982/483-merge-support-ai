@@ -22,9 +22,11 @@ selected_input = select_file()
 
 if selected_input:
     print(f"File selected: {selected_input}")
-    file_name_extension = Path(selected_input).name
 
-    model = UnprotectedLeftTurnFeatureExtraction()
-    model.run_model(selected_input, f"../data/processed/{file_name_extension}")
+    csv_file = Path(selected_input).stem + ".csv"
+    mp4_file = Path(selected_input).name
+
+    model = UnprotectedLeftTurnFeatureExtraction(f"../data/logs/{csv_file}")
+    model.run_model(selected_input, f"../data/processed/{mp4_file}")
 else:
     print("User cancelled the selection.")

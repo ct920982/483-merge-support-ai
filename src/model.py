@@ -12,14 +12,14 @@ CONF = 0.4
 CLASSES = [0, 1, 2, 3, 5, 7, 9] # https://docs.ultralytics.com/datasets/detect/coco8/#introduction
 
 class UnprotectedLeftTurnFeatureExtraction:
-    def __init__(self):
+    def __init__(self, log_file):
         self.model = YOLO(MODEL)
         self.traf_light_memory = {}
         self.prev_dists = {}
+        self.log_file = log_file
 
-        # TODO: make log file name dynamic
         # TODO: add is_safe
-        self.csv_file = open("log.csv", "w", newline="")
+        self.csv_file = open(log_file, "w", newline="")
         self.writer = csv.writer(self.csv_file)
         self.writer.writerow(["frame", "track_id", "class", "dist", "delta_dist", "light_state"])
 
@@ -51,7 +51,7 @@ class UnprotectedLeftTurnFeatureExtraction:
         return round(dc.HEIGHT / np.tan(angle), 1)
 
     def run_model(self, input_path, output_path):
-        print("Running model...") # just for sanity check
+        print("Running extraction model...") # just for sanity check
 
         capture = cv2.VideoCapture(input_path)
         output = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(*"mp4v"), 
@@ -113,4 +113,4 @@ class UnprotectedLeftTurnFeatureExtraction:
         capture.release()
         output.release()
         self.csv_file.close()
-        print(f"Success!!! Saved to {output_path}")
+        print(f"Successfully extracted features:\n Saved mp4 file to {output_path}\n Saved csv file to {self.log_file}")
