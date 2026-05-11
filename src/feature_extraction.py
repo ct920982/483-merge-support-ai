@@ -96,7 +96,7 @@ class UnprotectedLeftTurnFeatureExtraction:
                         color = state_colors.get(state, (255, 255, 255))
                     
                     # check if object is center left aka left lane
-                    is_oncoming = (dc.FRAME_WIDTH * 0.3 < (x1 + x2) / 2 < dc.FRAME_WIDTH * 0,5)
+                    is_oncoming = (dc.FRAME_WIDTH * 0.3 < (x1 + x2) / 2 < dc.FRAME_WIDTH * 0.5)
                     text_color =  (0, 165, 255) if is_oncoming and delta_dist > 0 else color
 
                     label = f"ID{track_id}: {dist}m"
