@@ -27,8 +27,15 @@ runs/
 *.gif
 
 # Data & labels
-data/
 *.cache
+
+*.csv
+# keep/commit these
+!labeled_apr_13_2026.csv
+!data/logs/labeled_mar_12_2026.csv
+
+!data/processed/
+!data/row/
 
 # Jupyter
 .ipynb_checkpoints/
