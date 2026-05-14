@@ -1,5 +1,6 @@
 import cv2
 import csv
+import joblib
 import numpy as np
 from ultralytics import YOLO
 
@@ -12,11 +13,14 @@ CONF = 0.4
 CLASSES = [0, 1, 2, 3, 5, 7, 9] # https://docs.ultralytics.com/datasets/detect/coco8/#introduction
 
 class UnprotectedLeftTurnFeatureExtraction:
-    def __init__(self, log_file):
+    def __init__(self, log_file, classifier_path=None, encoder_path=None):
         self.model = YOLO(MODEL)
         self.traf_light_memory = {}
         self.prev_dists = {}
         self.log_file = log_file
+
+        self.classifier = joblib.load(classifier_path) if classifier_path else None
+        self.encoder  = joblib.load(encoder_path)  if encoder_path  else None
 
         self.csv_file = open(log_file, "w", newline="")
         self.writer = csv.writer(self.csv_file)
@@ -58,6 +62,18 @@ class UnprotectedLeftTurnFeatureExtraction:
             if dist < 20:
                 return 0
         return 1
+    
+    def predict_safety(self, class_id, dist, delta_dist, state, is_oncoming): # this is for running with trained classifiers
+        if self.clf is None:
+            return self.is_safe_to_turn(class_id, dist, delta_dist, state, is_oncoming)
+        
+        try:
+            light_enc = self.le.transform([state])[0]
+        except ValueError:
+            light_enc = self.le.transform(["N/A"])[0]  # fallback for unseen states
+
+        features = [[class_id, dist, delta_dist, light_enc, int(is_oncoming)]]
+        return int(self.clf.predict(features)[0])
 
     def run_model(self, input_path, output_path):
         print("Running extraction model...") # just for sanity check
@@ -114,7 +130,11 @@ class UnprotectedLeftTurnFeatureExtraction:
                     cv2.putText(annotated, label, (int(x1), int(y1) - 10),
                                 cv2.FONT_HERSHEY_SIMPLEX, 2, text_color, 2)
                     
-                    safe = self.is_safe_to_turn(class_id, dist, delta_dist, state, is_oncoming)
+                    if self.classifier and self.encoder:
+                        safe = self.predict_safety(class_id, dist, delta_dist, state, is_oncoming)
+                    else:
+                        safe = self.is_safe_to_turn(class_id, dist, delta_dist, state, is_oncoming)
+
                     self.writer.writerow([frame_count, track_id, class_id, dist, delta_dist, state, safe, is_oncoming])
             
             cv2.putText(annotated, f"Frame: {frame_count}\n Safe: {safe}", (50, 50), 
