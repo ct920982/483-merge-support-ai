@@ -20,7 +20,7 @@ class UnprotectedLeftTurnFeatureExtraction:
 
         self.csv_file = open(log_file, "w", newline="")
         self.writer = csv.writer(self.csv_file)
-        self.writer.writerow(["frame", "track_id", "class", "dist", "delta_dist", "light_state", "is_safe"])
+        self.writer.writerow(["frame", "track_id", "class", "dist", "delta_dist", "light_state", "is_safe", "is_onccming"])
 
     def get_traffic_light_state(self, frame, x1, y1, x2, y2):
         crop = frame[int(y1):int(y2), int(x1):int(x2)]
@@ -48,6 +48,16 @@ class UnprotectedLeftTurnFeatureExtraction:
         if angle <= 0:
             return None
         return round(dc.HEIGHT / np.tan(angle), 1)
+    
+    def is_safe_to_turn(self, class_id, dist, delta_dist, state, is_oncoming):
+        if state == "red":
+            return 0
+        if is_oncoming and class_id in [2, 3, 5, 7]:
+            if dist < 40 and delta_dist > 0:
+                return 0
+            if dist < 20:
+                return 0
+        return 1
 
     def run_model(self, input_path, output_path):
         print("Running extraction model...") # just for sanity check
@@ -104,8 +114,8 @@ class UnprotectedLeftTurnFeatureExtraction:
                     cv2.putText(annotated, label, (int(x1), int(y1) - 10),
                                 cv2.FONT_HERSHEY_SIMPLEX, 2, text_color, 2)
                     
-                    # we will manually need to write 1 for safe in csv files
-                    self.writer.writerow([frame_count, track_id, class_id, dist, delta_dist, state, 0])
+                    safe = self.is_safe_to_turn(class_id, dist, delta_dist, state, is_oncoming)
+                    self.writer.writerow([frame_count, track_id, class_id, dist, delta_dist, state, safe, is_oncoming])
             
             output.write(annotated)
             frame_count += 1
