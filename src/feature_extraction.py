@@ -49,7 +49,7 @@ class UnprotectedLeftTurnFeatureExtraction:
             return None
         return round(dc.HEIGHT / np.tan(angle), 1)
     
-    def is_safe_to_turn(self, class_id, dist, delta_dist, state, is_oncoming):
+    def is_safe_to_turn(self, class_id, dist, delta_dist, state, is_oncoming): # not very accurate
         if state == "red":
             return 0
         if is_oncoming and class_id in [2, 3, 5, 7]:
@@ -116,6 +116,9 @@ class UnprotectedLeftTurnFeatureExtraction:
                     
                     safe = self.is_safe_to_turn(class_id, dist, delta_dist, state, is_oncoming)
                     self.writer.writerow([frame_count, track_id, class_id, dist, delta_dist, state, safe, is_oncoming])
+            
+            cv2.putText(annotated, f"Frame: {frame_count}\n Safe: {safe}", (50, 50), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 3)
             
             output.write(annotated)
             frame_count += 1
