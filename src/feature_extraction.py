@@ -20,7 +20,7 @@ class UnprotectedLeftTurnFeatureExtraction:
 
         self.csv_file = open(log_file, "w", newline="")
         self.writer = csv.writer(self.csv_file)
-        self.writer.writerow(["frame", "track_id", "class", "dist", "delta_dist", "light_state", "is_safe", "is_onccming"])
+        self.writer.writerow(["frame", "track_id", "class", "dist", "delta_dist", "light_state", "is_safe", "is_oncoming"])
 
     def get_traffic_light_state(self, frame, x1, y1, x2, y2):
         crop = frame[int(y1):int(y2), int(x1):int(x2)]
