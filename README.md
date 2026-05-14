@@ -1,106 +1,161 @@
-# CPSC 483 Introduction to Machine Learning  
+# CPSC 483 Introduction to Machine Learning
+
 ## Final Project: Unprotected Left Turn Merge Support AI
+
+### Project Overview
+
+This project analyzes dashcam video to detect traffic objects, estimate distance, track movement, detect traffic light color, and decide whether an unprotected left turn is safe.
+
+The pipeline uses YOLO object tracking, feature extraction, labeled CSV logs, trained classifiers, and model evaluation.
 
 ---
 
-## Pre-Requestitions
+## Folder Setup
+
+Make sure the project is organized like this:
+
+```text
+project/
+├── data/
+│   ├── raw/              # input MP4 videos
+│   ├── processed/        # output annotated MP4 videos
+│   ├── logs/             # generated CSV feature logs
+│   └── labeled_logs/     # manually labeled CSV files
+├── models/               # YOLO model + saved classifiers
+├── src/
+│   ├── gui.py
+│   ├── feature_extraction.py
+│   ├── dashcam.py
+│   ├── train_classifiers.ipynb
+│   └── evaluate_models.ipynb
+```
+
+---
+
+## Required Libraries
+
 Make sure the following is installed globally:
 - python3
 - pip
 - venv
-- tkinter  
+- tkinter 
 
----
-
-## Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/alex-bo7/483-merge-support-ai.git
-   cd 483-merge-support-ai/
-   ```
-
-2. **Create and activate a virtual environment** (recommended)
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # Mac/Linux
-   venv\Scripts\activate     # Windows
-   ```
-
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
----
-
-## Dataset
-
-Raw dashcam footage is not included in this repository due to file size. Videos are stored externally.
-> Professors sample will have select videos included.
-
-
-**To set up the dataset:**
-
-1. Download the dashcam `.mp4` files from the shared Dropbox folder: `https://www.dropbox.com/scl/fo/nnabh3xd15apn6069kfdw/AFNPmfpu_KLq8Yf64i2jf1o?rlkey=6vtre7y7b0l21n989spazqqhq&st=kdxvl8ka&dl=0`
-2. Place all `.mp4` files into `data/raw/`  
-
-**CSV format** (produced by `feature_extraction.py` and manually labeled):
-
-| Column | Description |
-|---|---|
-| `frame` | Frame number |
-| `track_id` | Object tracking ID |
-| `class` | COCO class ID |
-| `dist` | Estimated distance in meters |
-| `delta_dist` | Change in distance from previous frame |
-| `light_state` | Traffic light color (`red`, `yellow`, `green`, `N/A`) |
-| `is_safe` | Binary label — **manually set** (1 = safe, 0 = unsafe) |
-
-> **Note:** After running feature extraction, the `is_safe` column defaults to `0`. Labels must be manually reviewed and corrected in the CSV before training.
-
----
-
-## How to Run
-
-### Step 1: Feature Extraction
-
-Run the GUI to select a dashcam video. The script will process the video with YOLO, annotate it, and save the feature CSV.
+Install the required Python packages:
 
 ```bash
-python src/gui.py
+pip install -r requirements.txt
 ```
-
-- A file dialog will open, select an `.mp4` file from `data/raw/`
-- Annotated video is saved to `data/processed/`
-- Feature CSV is saved to `data/logs/`
-- **Manually update the `is_safe` column** in the CSV before proceeding
-
-### Step 2: Model Training & Evaluation
-
-Open and run the Jupyter notebook:
-
-```bash
-jupyter notebook src/ml_models_evaluation.ipynb
-```
-
-- Update `csv_file_name` in the notebook to point to your labeled CSV
-- The notebook trains and evaluates three classifiers:
-  - Logistic Regression (baseline)
-  - Decision Tree
-  - Random Forest
-- Outputs include accuracy, precision, recall, F1, ROC-AUC, confusion matrices, and ROC curves
 
 ---
 
-## Dashcam Configuration
+## How to Run the Project
 
-Camera constants are defined in `dashcam.py` and should not be changed unless a different camera is used.
+### 1. Add Raw Video
 
-| Parameter | Value | Description |
-|---|---|---|
-| Resolution | 3840 × 2160 | 4K |
-| FPS | 25 | Frames per second |
-| Mount height | 1.245 m | Camera height above ground |
-| Pitch | −5.0° | Downward tilt angle |
-| Focal length | 1578 px | Derived from 160° FOV at 4K |
+Place the input dashcam video in:
+
+```text
+../data/raw/
+```
+
+From https://www.dropbox.com/scl/fo/nnabh3xd15apn6069kfdw/AFNPmfpu_KLq8Yf64i2jf1o?rlkey=6vtre7y7b0l21n989spazqqhq&st=kdxvl8ka&dl=0
+
+> Professor sample will have videos included
+
+---
+
+### 2. Run Feature Extraction
+
+Inside `src/` run:
+
+```bash
+python gui.py
+```
+
+A file picker will open. Select the input video.
+
+This will generate:
+
+```text
+../data/logs/video_name.csv
+../data/processed/video_name.mp4
+```
+
+The CSV contains extracted features:
+
+```text
+frame, track_id, class, dist, delta_dist, light_state, is_safe, is_oncoming
+```
+
+---
+
+### 3. Manually Label the Data
+
+Open the generated CSV file from:
+
+```text
+../data/logs/
+```
+
+Review and correct the `is_safe` column manually. Use associate processed videos to help.
+
+After labeling, move the file to:
+
+```text
+../data/labeled_logs/
+```
+
+> Professor sample will have labeled csv files included
+
+---
+
+### 4. Train the Classifiers
+
+Open and run:
+
+```text
+train_classifiers.ipynb
+```
+
+This notebook:
+
+1. Loads all labeled CSV files.
+2. Preprocesses the features.
+3. Trains multiple classifiers.
+4. Prints classification reports.
+5. Saves trained models into:
+
+```text
+../models/
+```
+
+---
+
+### 5. Evaluate the Models
+
+Open and run:
+
+```text
+evaluate_models.ipynb
+```
+
+This notebook:
+
+1. Loads the labeled data.
+2. Applies the same preprocessing as training.
+3. Loads the saved models.
+4. Runs predictions.
+5. Prints accuracy, precision, recall, F1-score, and ROC-AUC.
+6. Displays confusion matrices and ROC curves.
+
+---
+
+## Important Notes
+
+- Do not change `dashcam.py` unless the camera setup changes.
+- `is_safe` must be manually reviewed before training.
+- The project depends on the folder paths staying consistent.
+- The processed MP4 is only for visual inspection.
+- The labeled CSV files are used for training and evaluation.
+
+---
