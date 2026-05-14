@@ -10,11 +10,6 @@ Make sure the following is installed globally:
 - venv
 - tkinter  
 
-if not run:  
-```bash
-sudo apt install python3 python3-pip python3-venv tkinter
-```
-
 ---
 
 ## Installation
@@ -42,13 +37,13 @@ sudo apt install python3 python3-pip python3-venv tkinter
 ## Dataset
 
 Raw dashcam footage is not included in this repository due to file size. Videos are stored externally.
+> Professors sample will have select videos included.
+
 
 **To set up the dataset:**
 
 1. Download the dashcam `.mp4` files from the shared Dropbox folder: `https://www.dropbox.com/scl/fo/nnabh3xd15apn6069kfdw/AFNPmfpu_KLq8Yf64i2jf1o?rlkey=6vtre7y7b0l21n989spazqqhq&st=kdxvl8ka&dl=0`
 2. Place all `.mp4` files into `data/raw/`  
-**OR**  
-labeled `.csv` files are provided in `data/logs/` (to skip step 1 in How to Run section)
 
 **CSV format** (produced by `feature_extraction.py` and manually labeled):
 
