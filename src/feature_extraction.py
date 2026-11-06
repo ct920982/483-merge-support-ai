@@ -10,6 +10,8 @@ import dashcam as dc
 # model configurations
 MODEL = "../models/yolo26x.pt" # https://docs.ultralytics.com/models/yolo26/#key-features
 CONF = 0.4
+DISTANCE_SCALE = 10
+RF_THRESHOLD = 0.7
 CLASSES = [0, 1, 2, 3, 5, 7, 9] # https://docs.ultralytics.com/datasets/detect/coco8/#introduction
 
 class UnprotectedLeftTurnFeatureExtraction:
@@ -46,34 +48,36 @@ class UnprotectedLeftTurnFeatureExtraction:
         return best if scores[best] > 50 else "unknown"
 
     def estimate_distance(self, y2):
-        delta_y = y2 - dc.HEIGHT / 2
-        angle = np.arctan(delta_y / dc.FOCAL_LEN) + abs(dc.PITCH_RAD)
+        delta_y = y2 - dc.FRAME_HEIGHT / 2
+        angle = np.arctan(delta_y / dc.FOCAL_LEN) - dc.PITCH_RAD
 
-        if angle <= 0:
+        if angle <= 1e-6 or angle >= np.pi / 2 or not 0 <= y2 < dc.FRAME_HEIGHT:
             return None
-        return round(dc.HEIGHT / np.tan(angle), 1)
+        return dc.HEIGHT / np.tan(angle) * DISTANCE_SCALE
     
     def is_safe_to_turn(self, class_id, dist, delta_dist, state, is_oncoming): # not very accurate
         if state == "red":
             return 0
         if is_oncoming and class_id in [2, 3, 5, 7]:
-            if dist < 40 and delta_dist > 0:
+            if dist < 40 * DISTANCE_SCALE and delta_dist > 0:
                 return 0
-            if dist < 20:
+            if dist < 20 * DISTANCE_SCALE:
                 return 0
         return 1
     
     def predict_safety(self, class_id, dist, delta_dist, state, is_oncoming): # this is for running with trained classifiers
-        if self.clf is None:
+        if self.classifier is None:
             return self.is_safe_to_turn(class_id, dist, delta_dist, state, is_oncoming)
         
         try:
-            light_enc = self.le.transform([state])[0]
+            light_enc = self.encoder.transform([state])[0]
         except ValueError:
-            light_enc = self.le.transform(["N/A"])[0]  # fallback for unseen states
+            light_enc = self.encoder.transform([np.nan])[0]  # fallback for unseen states
 
         features = [[class_id, dist, delta_dist, light_enc, int(is_oncoming)]]
-        return int(self.clf.predict(features)[0])
+        if type(self.classifier).__name__ == "RandomForestClassifier":
+            return int(self.classifier.predict_proba(features)[0, 1] >= RF_THRESHOLD)
+        return int(self.classifier.predict(features)[0])
 
     def run_model(self, input_path, output_path):
         print("Running extraction model...") # just for sanity check
@@ -99,11 +103,11 @@ class UnprotectedLeftTurnFeatureExtraction:
                     track_id = int(box.id[0]) if box.id is not None else -1
                     class_id = int(box.cls[0])
 
-                    dist = self.estimate_distance(y2)
+                    dist = 0.0 if class_id == 9 else self.estimate_distance(y2)
                     if dist is None:
                         continue
 
-                    delta_dist = round(self.prev_dists.get(track_id, dist) - dist, 2)
+                    delta_dist = 0.0 if class_id == 9 else round(self.prev_dists.get(track_id, dist) - dist, 2)
                     self.prev_dists[track_id] = dist
 
                     # traffic lights
@@ -125,7 +129,7 @@ class UnprotectedLeftTurnFeatureExtraction:
                     is_oncoming = (dc.FRAME_WIDTH * 0.3 < (x1 + x2) / 2 < dc.FRAME_WIDTH * 0.5)
                     text_color =  (0, 165, 255) if is_oncoming and delta_dist > 0 else color
 
-                    label = f"ID{track_id}: {dist}m"
+                    label = f"ID{track_id}" if class_id == 9 else f"ID{track_id}: {dist:.1f}"
                     if state != "N/A": label += f" [{state}]"
                     cv2.putText(annotated, label, (int(x1), int(y1) - 10),
                                 cv2.FONT_HERSHEY_SIMPLEX, 2, text_color, 2)
@@ -137,7 +141,7 @@ class UnprotectedLeftTurnFeatureExtraction:
 
                     self.writer.writerow([frame_count, track_id, class_id, dist, delta_dist, state, safe, is_oncoming])
             
-            cv2.putText(annotated, f"Frame: {frame_count}\n Safe: {safe}", (50, 50), 
+            cv2.putText(annotated, f"Frame: {frame_count}", (50, 50), 
                         cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 3)
             
             output.write(annotated)
